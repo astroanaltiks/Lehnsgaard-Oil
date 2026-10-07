@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order Oil</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Arial, sans-serif;
+    background: #f5f5f5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  .card {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+  }
+  h2 { text-align: center; margin-bottom: 24px; font-size: 22px; color: #222; }
+  label.field-label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 6px; color: #444; }
+  input[type="text"], select {
+    width: 100%; padding: 10px 12px; border: 1px solid #ccc;
+    border-radius: 8px; font-size: 16px; margin-bottom: 18px;
+  }
+  .checkbox-group { margin-bottom: 18px; }
+  .checkbox-item {
+    display: flex; align-items: center; padding: 12px 14px;
+    border: 2px solid #ddd; border-radius: 8px; margin-bottom: 8px;
+    cursor: pointer; font-size: 16px; color: #333; user-select: none;
+  }
+  .checkbox-item.checked { border-color: #5a67d8; background: #eef0ff; font-weight: bold; }
+  .checkbox-item input[type="checkbox"] {
+    width: 22px; height: 22px; margin-right: 12px;
+    accent-color: #5a67d8; cursor: pointer; flex-shrink: 0;
+  }
+  .price-box {
+    background: #f0f0f0; border-radius: 8px; padding: 14px;
+    text-align: center; font-size: 20px; font-weight: bold;
+    margin-bottom: 20px; color: #222;
+  }
+  .pay-btn {
+    width: 100%; padding: 16px; background: #5a67d8; color: white;
+    border: none; border-radius: 8px; font-size: 17px; font-weight: bold;
+    cursor: pointer; margin-bottom: 10px;
+  }
+  .mp-btn {
+    display: block; width: 100%; padding: 18px; background: #5b2d8e;
+    color: white; border-radius: 8px; font-size: 18px; font-weight: bold;
+    text-align: center; text-decoration: none; margin-bottom: 10px;
+    border: none; cursor: pointer;
+  }
+  .back-btn {
+    width: 100%; padding: 12px; background: #eee; color: #333;
+    border: none; border-radius: 8px; font-size: 15px; cursor: pointer; margin-top: 10px;
+  }
+  #summary { display: none; }
+  #summary p { margin-bottom: 8px; font-size: 15px; color: #333; }
+  .summary-box { background: #f9f9f9; border-radius: 8px; padding: 16px; margin-bottom: 20px; }
+  .divider { border: none; border-top: 1px solid #eee; margin: 4px 0 18px; }
+  .section-label { font-size: 14px; font-weight: bold; color: #444; margin-bottom: 10px; display: block; }
+  .note { font-size: 12px; color: #888; text-align: center; margin-top: 6px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div id="form-section">
+    <h2>🛢️ Order Oil</h2>
+    <label class="field-label" for="name">Your Name</label>
+    <input type="text" id="name" placeholder="Enter your name" />
+    <hr class="divider">
+    <label class="field-label" for="box">Box Number (1–12)</label>
+    <select id="box" onchange="updatePrice()">
+      <option value="">Select box...</option>
+    </select>
+    <span class="section-label">Select Bottle(s) in Box</span>
+    <div class="checkbox-group">
+      <label class="checkbox-item" id="label-f1">
+        <input type="checkbox" id="f1" value="1" onchange="toggleLabel('f1'); updatePrice();"> Bottle 1
+      </label>
+      <label class="checkbox-item" id="label-f2">
+        <input type="checkbox" id="f2" value="2" onchange="toggleLabel('f2'); updatePrice();"> Bottle 2
+      </label>
+      <label class="checkbox-item" id="label-f3">
+        <input type="checkbox" id="f3" value="3" onchange="toggleLabel('f3'); updatePrice();"> Bottle 3
+      </label>
+    </div>
+    <div class="price-box" id="price-display">Select bottles to see price</div>
+    <button class="pay-btn" onclick="showSummary()">Continue to Payment →</button>
+  </div>
+
+  <div id="summary">
+    <h2>📋 Order Summary</h2>
+    <div class="summary-box">
+      <p><strong>Name:</strong> <span id="s-name"></span></p>
+      <p><strong>Box:</strong> <span id="s-box"></span></p>
+      <p><strong>Bottles:</strong> <span id="s-bottles"></span></p>
+      <p><strong>Total:</strong> <span id="s-total"></span> kr.</p>
+    </div>
+    <button class="mp-btn" onclick="openMobilePay()">📱 Pay with MobilePay</button>
+    <p class="note">Opens MobilePay app with amount pre-filled</p>
+    <button class="back-btn" onclick="goBack()">← Back</button>
+  </div>
+</div>
+
+<script>
+  const boxSelect = document.getElementById('box');
+  for (let i = 1; i <= 12; i++) {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = 'Box ' + i;
+    boxSelect.appendChild(opt);
+  }
+
+  function toggleLabel(id) {
+    const cb = document.getElementById(id);
+    document.getElementById('label-' + id).classList.toggle('checked', cb.checked);
+  }
+
+  const PRICE = 180;
+  let mpUrl = '';
+
+  function getSelectedBottles() {
+    return ['f1','f2','f3']
+      .filter(id => document.getElementById(id).checked)
+      .map(id => parseInt(document.getElementById(id).value));
+  }
+
+  function updatePrice() {
+    const selected = getSelectedBottles();
+    if (selected.length === 0) {
+      document.getElementById('price-display').textContent = 'Select bottles to see price';
+    } else {
+      const total = selected.length * PRICE;
+      document.getElementById('price-display').textContent =
+        selected.length + ' bottle' + (selected.length > 1 ? 's' : '') + ' = ' + total + ' kr.';
+    }
+  }
+
+  function showSummary() {
+    const name = document.getElementById('name').value.trim();
+    const box = document.getElementById('box').value;
+    const bottles = getSelectedBottles();
+    if (!name)   { alert('Please enter your name.'); return; }
+    if (!box)    { alert('Please select a box number.'); return; }
+    if (bottles.length === 0) { alert('Please select at least one bottle.'); return; }
+    const total = bottles.length * PRICE;
+    const bottleNames = bottles.map(b => 'Bottle ' + b).join(', ');
+    document.getElementById('s-name').textContent = name;
+    document.getElementById('s-box').textContent = 'Box ' + box;
+    document.getElementById('s-bottles').textContent = bottleNames;
+    document.getElementById('s-total').textContent = total;
+    const comment = encodeURIComponent('Oil Box ' + box + ' ' + bottleNames + ' ' + name);
+    mpUrl = 'mobilepay://send?phone=77350&amount=' + total + '&comment=' + comment;
+    document.getElementById('form-section').style.display = 'none';
+    document.getElementById('summary').style.display = 'block';
+    window.scrollTo(0, 0);
+  }
+
+  function openMobilePay() {
+    window.location.href = mpUrl;
+    setTimeout(function() {
+      const total = document.getElementById('s-total').textContent;
+      const box = document.getElementById('s-box').textContent;
+      const bottles = document.getElementById('s-bottles').textContent;
+      const name = document.getElementById('s-name').textContent;
+      const comment = encodeURIComponent('Oil ' + box + ' ' + bottles + ' ' + name);
+      window.location.href = 'https://mobilepay.dk/betalingslink/betal?phone=77350&amount=' + total + '&comment=' + comment;
+    }, 1500);
+  }
+
+  function goBack() {
+    document.getElementById('summary').style.display = 'none';
+    document.getElementById('form-section').style.display = 'block';
+    window.scrollTo(0, 0);
+  }
+</script>
+</body>
+</html>
