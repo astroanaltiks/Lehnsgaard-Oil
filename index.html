@@ -29,15 +29,23 @@
     width: 100%; padding: 10px 12px; border: 1px solid #ccc;
     border-radius: 8px; font-size: 16px; margin-bottom: 18px;
   }
-  .checkbox-group { margin-bottom: 18px; }
+  .checkbox-group {
+    max-height: 280px;
+    overflow-y: auto;
+    margin-bottom: 18px;
+    padding-right: 4px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
   .checkbox-item {
-    display: flex; align-items: center; padding: 12px 14px;
-    border: 2px solid #ddd; border-radius: 8px; margin-bottom: 8px;
-    cursor: pointer; font-size: 16px; color: #333; user-select: none;
+    display: flex; align-items: center; padding: 10px 12px;
+    border: 2px solid #ddd; border-radius: 8px;
+    cursor: pointer; font-size: 15px; color: #333; user-select: none;
   }
   .checkbox-item.checked { border-color: #5a67d8; background: #eef0ff; font-weight: bold; }
   .checkbox-item input[type="checkbox"] {
-    width: 22px; height: 22px; margin-right: 12px;
+    width: 20px; height: 20px; margin-right: 8px;
     accent-color: #5a67d8; cursor: pointer; flex-shrink: 0;
   }
   .price-box {
@@ -79,18 +87,8 @@
     <select id="box" onchange="updatePrice()">
       <option value="">Select box...</option>
     </select>
-    <span class="section-label">Select Bottle(s) in Box</span>
-    <div class="checkbox-group">
-      <label class="checkbox-item" id="label-f1">
-        <input type="checkbox" id="f1" value="1" onchange="toggleLabel('f1'); updatePrice();"> Bottle 1
-      </label>
-      <label class="checkbox-item" id="label-f2">
-        <input type="checkbox" id="f2" value="2" onchange="toggleLabel('f2'); updatePrice();"> Bottle 2
-      </label>
-      <label class="checkbox-item" id="label-f3">
-        <input type="checkbox" id="f3" value="3" onchange="toggleLabel('f3'); updatePrice();"> Bottle 3
-      </label>
-    </div>
+    <span class="section-label">Select Bottle(s) (1–24)</span>
+    <div class="checkbox-group" id="bottle-group"></div>
     <div class="price-box" id="price-display">Select bottles to see price</div>
     <button class="pay-btn" onclick="showSummary()">Continue to Payment →</button>
   </div>
@@ -118,6 +116,15 @@
     boxSelect.appendChild(opt);
   }
 
+  const bottleGroup = document.getElementById('bottle-group');
+  for (let i = 1; i <= 24; i++) {
+    const label = document.createElement('label');
+    label.className = 'checkbox-item';
+    label.id = 'label-f' + i;
+    label.innerHTML = '<input type="checkbox" id="f' + i + '" value="' + i + '" onchange="toggleLabel(\'f' + i + '\'); updatePrice();"> Bottle ' + i;
+    bottleGroup.appendChild(label);
+  }
+
   function toggleLabel(id) {
     const cb = document.getElementById(id);
     document.getElementById('label-' + id).classList.toggle('checked', cb.checked);
@@ -127,9 +134,12 @@
   let mpUrl = '';
 
   function getSelectedBottles() {
-    return ['f1','f2','f3']
-      .filter(id => document.getElementById(id).checked)
-      .map(id => parseInt(document.getElementById(id).value));
+    const selected = [];
+    for (let i = 1; i <= 24; i++) {
+      const cb = document.getElementById('f' + i);
+      if (cb && cb.checked) selected.push(i);
+    }
+    return selected;
   }
 
   function updatePrice() {
@@ -147,8 +157,8 @@
     const name = document.getElementById('name').value.trim();
     const box = document.getElementById('box').value;
     const bottles = getSelectedBottles();
-    if (!name)   { alert('Please enter your name.'); return; }
-    if (!box)    { alert('Please select a box number.'); return; }
+    if (!name) { alert('Please enter your name.'); return; }
+    if (!box) { alert('Please select a box number.'); return; }
     if (bottles.length === 0) { alert('Please select at least one bottle.'); return; }
     const total = bottles.length * PRICE;
     const bottleNames = bottles.map(b => 'Bottle ' + b).join(', ');
