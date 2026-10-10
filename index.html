@@ -25,7 +25,7 @@
   }
   h2 { text-align: center; margin-bottom: 24px; font-size: 22px; color: #222; }
   label.field-label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 6px; color: #444; }
-  input[type="text"], select {
+  input[type="text"] {
     width: 100%; padding: 10px 12px; border: 1px solid #ccc;
     border-radius: 8px; font-size: 16px; margin-bottom: 18px;
   }
@@ -83,10 +83,6 @@
     <label class="field-label" for="name">Your Name</label>
     <input type="text" id="name" placeholder="Enter your name" />
     <hr class="divider">
-    <label class="field-label" for="box">Box Number (1–12)</label>
-    <select id="box" onchange="updatePrice()">
-      <option value="">Select box...</option>
-    </select>
     <span class="section-label">Select Bottle(s) (1–24)</span>
     <div class="checkbox-group" id="bottle-group"></div>
     <div class="price-box" id="price-display">Select bottles to see price</div>
@@ -97,7 +93,6 @@
     <h2>📋 Order Summary</h2>
     <div class="summary-box">
       <p><strong>Name:</strong> <span id="s-name"></span></p>
-      <p><strong>Box:</strong> <span id="s-box"></span></p>
       <p><strong>Bottles:</strong> <span id="s-bottles"></span></p>
       <p><strong>Total:</strong> <span id="s-total"></span> kr.</p>
     </div>
@@ -108,14 +103,6 @@
 </div>
 
 <script>
-  const boxSelect = document.getElementById('box');
-  for (let i = 1; i <= 12; i++) {
-    const opt = document.createElement('option');
-    opt.value = i;
-    opt.textContent = 'Box ' + i;
-    boxSelect.appendChild(opt);
-  }
-
   const bottleGroup = document.getElementById('bottle-group');
   for (let i = 1; i <= 24; i++) {
     const label = document.createElement('label');
@@ -155,18 +142,15 @@
 
   function showSummary() {
     const name = document.getElementById('name').value.trim();
-    const box = document.getElementById('box').value;
     const bottles = getSelectedBottles();
     if (!name) { alert('Please enter your name.'); return; }
-    if (!box) { alert('Please select a box number.'); return; }
     if (bottles.length === 0) { alert('Please select at least one bottle.'); return; }
     const total = bottles.length * PRICE;
     const bottleNames = bottles.map(b => 'Bottle ' + b).join(', ');
     document.getElementById('s-name').textContent = name;
-    document.getElementById('s-box').textContent = 'Box ' + box;
     document.getElementById('s-bottles').textContent = bottleNames;
     document.getElementById('s-total').textContent = total;
-    const comment = encodeURIComponent('Oil Box ' + box + ' ' + bottleNames + ' ' + name);
+    const comment = encodeURIComponent('Oil ' + bottleNames + ' ' + name);
     mpUrl = 'mobilepay://send?phone=77350&amount=' + total + '&comment=' + comment;
     document.getElementById('form-section').style.display = 'none';
     document.getElementById('summary').style.display = 'block';
@@ -177,10 +161,9 @@
     window.location.href = mpUrl;
     setTimeout(function() {
       const total = document.getElementById('s-total').textContent;
-      const box = document.getElementById('s-box').textContent;
       const bottles = document.getElementById('s-bottles').textContent;
       const name = document.getElementById('s-name').textContent;
-      const comment = encodeURIComponent('Oil ' + box + ' ' + bottles + ' ' + name);
+      const comment = encodeURIComponent('Oil ' + bottles + ' ' + name);
       window.location.href = 'https://mobilepay.dk/betalingslink/betal?phone=77350&amount=' + total + '&comment=' + comment;
     }, 1500);
   }
